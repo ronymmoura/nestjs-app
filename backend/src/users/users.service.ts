@@ -23,12 +23,12 @@ export class UsersService {
   }
 
   update(id: string, updateUserDto: UpdateUserDto) {
-    return this.userModel.findByIdAndUpdate({ _id: id }, updateUserDto, {
+    return this.userModel.findByIdAndUpdate(id, updateUserDto, {
       new: true,
     });
   }
 
   remove(id: string) {
-    return this.userModel.deleteOne({ _id: id });
+    return this.userModel.findByIdAndDelete(id);
   }
 }
