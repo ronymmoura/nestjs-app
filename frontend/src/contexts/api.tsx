@@ -18,8 +18,13 @@ const ApiContext = createContext<IApiContext | null>(null);
 
 export const ApiProvider: React.FC<IApiProvider> = ({ baseUrl, children }) => {
   function createInstance() {
+    const token = localStorage.getItem('token');
+
     return axios.create({
-      baseURL: baseUrl
+      baseURL: baseUrl,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
   }
 
@@ -31,10 +36,10 @@ export const ApiProvider: React.FC<IApiProvider> = ({ baseUrl, children }) => {
         data,
         ...config
       });
+
       return result.data as T;
-    } catch (e) {
-      const err: any = e;
-      throw new Error(err.response ? err.response.data : err.message ?? err);
+    } catch (e: any) {
+      throw new Error(e.response ? e.response.data.message : e);
     }
   }
 

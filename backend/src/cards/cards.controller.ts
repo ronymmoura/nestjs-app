@@ -6,23 +6,24 @@ import {
   Patch,
   Param,
   Delete,
+  Request,
 } from '@nestjs/common';
 import { CardsService } from './cards.service';
-import { CreateCardDto } from './dto/create-card.dto';
-import { UpdateCardDto } from './dto/update-card.dto';
+import { CardDto } from './dto/card.dto';
 
 @Controller('cards')
 export class CardsController {
   constructor(private readonly cardsService: CardsService) {}
 
   @Post()
-  create(@Body() createCardDto: CreateCardDto) {
-    return this.cardsService.create(createCardDto);
+  create(@Body() cardDto: CardDto) {
+    return this.cardsService.create(cardDto);
   }
 
   @Get()
-  findAll() {
-    return this.cardsService.findAll();
+  find(@Request() req) {
+    const userId = req.user._id;
+    return this.cardsService.find(userId);
   }
 
   @Get(':id')
@@ -30,14 +31,9 @@ export class CardsController {
     return this.cardsService.findOne(id);
   }
 
-  @Get(':id/prediction')
-  prediction(@Param('id') id: string) {
-    return this.cardsService.prediction(id);
-  }
-
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCardDto: UpdateCardDto) {
-    return this.cardsService.update(id, updateCardDto);
+  update(@Param('id') id: string, @Body() cardDto: CardDto) {
+    return this.cardsService.update(id, cardDto);
   }
 
   @Delete(':id')

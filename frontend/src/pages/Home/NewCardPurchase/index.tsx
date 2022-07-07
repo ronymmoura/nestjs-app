@@ -48,8 +48,8 @@ export const NewCardPurchase: React.FC<Props> = ({ onSave }) => {
       value: CardPurchase.value,
       installmentValue: CardPurchase.installmentValue
     };
-    setCardPurchase({});
     await onSave(purchase);
+    setCardPurchase({});
   }
 
   return (

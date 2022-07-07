@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-import { Card } from 'src/cards/entities/card.entity';
+import { Document } from 'mongoose';
+import { CardPurchaseInstallment } from '../../card-purchase-installments/entities/card-purchase-installments.entity';
 
 export type CardPurchaseDocument = CardPurchase & Document;
 
@@ -24,8 +24,8 @@ export class CardPurchase {
   @Prop({ required: true, default: 0 })
   installmentValue: number;
 
-  @Prop({ required: true, default: false })
-  isPaid: boolean;
+  @Prop()
+  installments: CardPurchaseInstallment[];
 }
 
 export const CardPurchaseSchema = SchemaFactory.createForClass(CardPurchase);

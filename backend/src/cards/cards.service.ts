@@ -1,19 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { parseISO } from 'date-fns';
 import { Model } from 'mongoose';
+import { CardPurchaseInstallment } from 'src/card-purchase-installments/entities/card-purchase-installments.entity';
+import { UsersService } from 'src/users/users.service';
 import { CardPurchase } from '../card-purchase/entities/card-purchase.entity';
-import { CreateCardDto } from './dto/create-card.dto';
-import { UpdateCardDto } from './dto/update-card.dto';
+import { CardDto } from './dto/card.dto';
 import { Card, CardDocument } from './entities/card.entity';
-import { PredictionEntity } from './entities/prediction.entity';
 
 @Injectable()
 export class CardsService {
-  constructor(@InjectModel(Card.name) private cardModel: Model<CardDocument>) {}
+  constructor(
+    @InjectModel(Card.name) private cardModel: Model<CardDocument>,
+    private userService: UsersService,
+  ) {}
 
-  create(createCardDto: CreateCardDto) {
-    const user = new this.cardModel(createCardDto);
+  create(cardDto: CardDto) {
+    this.createInstallments(cardDto);
+
+    const user = new this.cardModel(cardDto);
     return user.save();
   }
 
@@ -21,12 +25,19 @@ export class CardsService {
     return this.cardModel.find();
   }
 
+  async find(userId: string) {
+    const user = await this.userService.findOne(userId);
+    return user.cards;
+  }
+
   findOne(id: string) {
     return this.cardModel.findById(id);
   }
 
-  update(id: string, updateCardDto: UpdateCardDto) {
-    return this.cardModel.findByIdAndUpdate(id, updateCardDto, {
+  update(id: string, cardDto: CardDto) {
+    this.createInstallments(cardDto);
+
+    return this.cardModel.findByIdAndUpdate(id, cardDto, {
       new: true,
     });
   }
@@ -35,52 +46,29 @@ export class CardsService {
     return this.cardModel.findByIdAndDelete(id);
   }
 
-  async prediction(id: string) {
-    const card = await this.cardModel.findById(id).exec();
-
-    const predictions: PredictionEntity[] = [];
-
-    let date = new Date();
-
-    for (let i = 0; i <= 12; i++) {
-      date = new Date();
-      date = new Date(date.getFullYear(), date.getMonth() + i, date.getDay());
-
-      const purchases: CardPurchase[] = [];
-
-      card.purchases.forEach((purchase) => {
-        let paidInstallments = purchase.paidInstallments;
-        const purchaseDate = parseISO(purchase.date.toString());
-
-        if (purchase.numberOfInstallments > 0) {
-          paidInstallments += i;
-
-          purchase = {
-            ...purchase,
-            paidInstallments,
-          };
-
-          if (
-            paidInstallments <= purchase.numberOfInstallments &&
-            paidInstallments + i > 0
-          )
-            purchases.push(purchase);
-        }
-
+  createInstallments(cardDto: CardDto): CardDto {
+    if (cardDto.purchases) {
+      cardDto.purchases.forEach((purchase: CardPurchase) => {
         if (
-          !purchase.numberOfInstallments &&
-          purchaseDate.getMonth() === date.getMonth() &&
-          purchaseDate.getFullYear() === date.getFullYear()
-        )
-          purchases.push(purchase);
-      });
+          purchase.numberOfInstallments &&
+          purchase.numberOfInstallments > 0
+        ) {
+          const installmentsList: CardPurchaseInstallment[] = [];
 
-      predictions.push({
-        date,
-        purchases,
+          for (let i = 0; i <= purchase.numberOfInstallments; i++) {
+            const newInstallment: CardPurchaseInstallment = {
+              installment: i,
+              isPaid: i < purchase.paidInstallments,
+            };
+
+            installmentsList.push(newInstallment);
+          }
+
+          purchase.installments = installmentsList;
+        }
       });
     }
 
-    return predictions;
+    return cardDto;
   }
 }
